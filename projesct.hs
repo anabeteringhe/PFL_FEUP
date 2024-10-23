@@ -16,16 +16,24 @@ cities :: RoadMap -> [City]
 cities roadmap = Data.List.nub [city | (city1, city2, _) <- roadmap, city <- [city1, city2]]
 
 areAdjacent :: RoadMap -> City -> City -> Bool
-areAdjacent = undefined
+areAdjacent roadmap city1 city2 = any (\(c1, c2, _) -> (c1 == city1 && c2 == city2) || (c1 == city2 && c2 == city1)) roadmap
 
 distance :: RoadMap -> City -> City -> Maybe Distance
-distance = undefined
+distance roadmap city1 city2 = 
+    case filter (\(c1, c2, _) -> (c1 == city1 && c2 == city2) || (c1 == city2 && c2 == city1)) roadmap of
+        [(_, _, d)] -> Just d
+        _           -> Nothing
 
-adjacent :: RoadMap -> City -> [(City,Distance)]
-adjacent = undefined
+adjacent :: RoadMap -> City -> [(City, Distance)]
+adjacent roadmap city = [(c2, d) | (c1, c2, d) <- roadmap, c1 == city] ++ [(c1, d) | (c1, c2, d) <- roadmap, c2 == city]
 
 pathDistance :: RoadMap -> Path -> Maybe Distance
-pathDistance = undefined
+pathDistance _ [] = Just 0
+pathDistance _ [_] = Just 0
+pathDistance roadmap (c1:c2:cs) = do
+    d1 <- distance roadmap c1 c2
+    d2 <- pathDistance roadmap (c2:cs)
+    return (d1 + d2)
 
 rome :: RoadMap -> [City]
 rome = undefined
