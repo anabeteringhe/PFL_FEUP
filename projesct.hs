@@ -26,7 +26,7 @@ cities roadmap = Data.List.nub [city | (city1, city2, _) <- roadmap, city <- [ci
 areAdjacent :: RoadMap -> City -> City -> Bool
 areAdjacent roadmap city1 city2 = any (\(c1, c2, _) -> (c1 == city1 && c2 == city2) || (c1 == city2 && c2 == city1)) roadmap
 
--- The function returns the distance between two adjiacent cities.
+-- The function returns the distance between two adjacent cities.
 -- Arguments: roadmap- the list of cities and distances, and the two cities we want to check
 -- The function returns "Just [distance]" if the cities are adjacent, and "Nothing" otherwise.
 distance :: RoadMap -> City -> City -> Maybe Distance
@@ -36,7 +36,7 @@ distance roadmap city1 city2 =
     [] -> Nothing
 
 -- The function displays a list of cities adjacent to the given city along with their distances.
--- Arguments: the roadmap and the city for which the adjiacent cities are needed
+-- Arguments: the roadmap and the city for which the adjacent cities are needed
 -- The function returns a list of tuples containing the adjacent cities and their distances.
 adjacent :: RoadMap -> City -> [(City, Distance)]
 adjacent roadmap city =
