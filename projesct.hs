@@ -1,5 +1,5 @@
-import qualified Data.Array
-import qualified Data.Bits
+--import qualified Data.Array
+--import qualified Data.Bits
 import qualified Data.List
 
 -- PFL 2024/2025 Practical assignment 1
@@ -33,9 +33,9 @@ areAdjacent roadmap city1 city2 = any (\(c1, c2, _) -> (c1 == city1 && c2 == cit
 -- the function returns just the distance if the cities are adjacent, otherwise returns "Nothing".
 distance :: RoadMap -> City -> City -> Maybe Distance
 distance roadmap city1 city2 =
-  case filter (\(c1, c2, _) -> (c1 == city1 && c2 == city2) || (c1 == city2 && c2 == city1)) roadmap of
-    ((_, _, d) : _) -> Just d
-    [] -> Nothing
+    case filter (\(c1, c2, _) -> (c1 == city1 && c2 == city2) || (c1 == city2 && c2 == city1)) roadmap of
+        ((_, _, d) : _) -> Just d
+        [] -> Nothing
 
 -- the function shows a list of cities adjacent to the given city along with their distances.
 -- roadmap: a roadmap containing cities and distances between each pair of cities.
@@ -45,7 +45,7 @@ adjacent :: RoadMap -> City -> [(City, Distance)]
 adjacent roadmap city =
   [ if c1 == city then (c2, d) else (c1, d)
   | (c1, c2, d) <- roadmap,
-  c1 == city || c2 == city
+    c1 == city || c2 == city
   ]
 
 -- the function calculates the total distance of a given path.
@@ -55,7 +55,7 @@ adjacent roadmap city =
 pathDistance :: RoadMap -> Path -> Maybe Distance
 pathDistance roadmap path = fmap sum (sequence distances)
   where
-  distances = [distance roadmap city1 city2 | (city1, city2) <- zip path (tail path)]
+    distances = [distance roadmap city1 city2 | (city1, city2) <- zip path (tail path)]
 
 -- | Finds the city with the highest degree (most connections) in the roadmap.
 -- 
@@ -66,23 +66,7 @@ rome :: RoadMap -> [City]
 rome roadmap =
   let cityDegrees = [(city, length [(c1, c2, d) | (c1, c2, d) <- roadmap, city == c1 || city == c2]) | city <- cities roadmap]
       maxDegree = maximum (map snd cityDegrees)
-  in [city | (city, degree) <- cityDegrees, degree == maxDegree]
-
--- | Finds all cities reachable from the given city.
--- 
--- reachableFrom :: RoadMap -> City -> [City]
--- @param roadmap The roadmap containing cities and distances.
--- @param city The starting city.
--- @return A list of cities reachable from the starting city.
-reachableFrom :: RoadMap -> City -> [City]
-reachableFrom roadmap city = dfs [city] []
-  where
-  dfs [] visited = visited
-  dfs (current : stack) visited
-    | current `elem` visited = dfs stack visited
-    | otherwise = dfs (adjacentCities ++ stack) (current : visited)
-    where
-    adjacentCities = [c | (c, _) <- adjacent roadmap current]
+   in [city | (city, degree) <- cityDegrees, degree == maxDegree]
 
 -- | Checks if the roadmap is strongly connected.
 -- 
@@ -90,7 +74,14 @@ reachableFrom roadmap city = dfs [city] []
 -- @param roadmap The roadmap containing cities and distances.
 -- @return True if the roadmap is strongly connected, otherwise False.
 isStronglyConnected :: RoadMap -> Bool
-isStronglyConnected roadmap = all (\city -> length (reachableFrom roadmap city) == length (cities roadmap)) (cities roadmap)
+isStronglyConnected roadmap = all (\city -> length (dfs [city] []) == length (cities roadmap)) (cities roadmap)
+  where
+    dfs [] visited = visited
+    dfs (current : stack) visited
+      | current `elem` visited = dfs stack visited
+      | otherwise = dfs (adjacentCities ++ stack) (current : visited)
+      where
+        adjacentCities = [c | (c, _) <- adjacent roadmap current]
 
 -- | Finds the shortest path between two cities.
 -- 
@@ -101,18 +92,18 @@ isStronglyConnected roadmap = all (\city -> length (reachableFrom roadmap city) 
 -- @return A list of paths representing the shortest path(s) between the two cities.
 shortestPath :: RoadMap -> City -> City -> [Path]
 shortestPath roadmap start end
-  | start == end = [[start]]
-  | otherwise = filter ((== minDist) . pathDist) allPaths
-  where
-    allPaths = dfs [[start]]
-    dfs [] = []
-    dfs (path:paths)
-    | last path == end = path : dfs paths
-    | otherwise = dfs (paths ++ [path ++ [next] | (next, _) <- adjacent roadmap (last path), next `notElem` path])
-    pathDist path = case pathDistance roadmap path of
-    Just d -> d
-    Nothing -> maxBound
-    minDist = minimum (map pathDist allPaths)
+    | start == end = [[start]]
+    | otherwise = filter ((== minDist) . pathDist) allPaths
+    where
+      allPaths = dfs [[start]]
+      dfs [] = []
+      dfs (path:paths)
+        | last path == end = path : dfs paths
+        | otherwise = dfs (paths ++ [path ++ [next] | (next, _) <- adjacent roadmap (last path), next `notElem` path])
+      pathDist path = case pathDistance roadmap path of
+        Just d -> d
+        Nothing -> maxBound
+      minDist = minimum (map pathDist allPaths)
 
 -- | Solves the Traveling Salesman Problem using a brute force approach.
 -- 
@@ -122,20 +113,16 @@ shortestPath roadmap start end
 travelSales :: RoadMap -> Path
 travelSales roadmap
   | null citiesList = []
-  | otherwise = snd $ minimum [(fromJust (pathDistance roadmap path), path) | path <- allPaths]
+  | null validPaths = []
+  | otherwise = snd $ minimum validPaths
   where
-  citiesList = cities roadmap
-  allPaths = [start : path ++ [start] | start <- citiesList, path <- permutations (filter (/= start) citiesList)]
-  permutations [] = [[]]
-  permutations xs = [x : ps | x <- xs, ps <- permutations (filter (/= x) xs)]
-  fromJust (Just x) = x
-  fromJust Nothing = error "Unexpected Nothing"
+    citiesList = cities roadmap
+    allPaths = [start : path ++ [start] | start <- citiesList, path <- permutations (filter (/= start) citiesList)]
+    validPaths = [(d, path) | path <- allPaths, let d = pathDistance roadmap path, d /= Nothing]
+    permutations [] = [[]]
+    permutations xs = [x : ps | x <- xs, ps <- permutations (filter (/= x) xs)]
 
--- | Placeholder for the Traveling Salesman Problem brute force solution for groups of 3 people.
--- 
--- tspBruteForce :: RoadMap -> Path
--- @param roadmap The roadmap containing cities and distances.
--- @return The shortest path that visits all cities exactly once and returns to the starting city.
+
 tspBruteForce = undefined -- only for groups of 3 people; groups of 2 people: do not edit this function
 
 -- Some graphs to test your work
